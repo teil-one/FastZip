@@ -9,7 +9,7 @@
 
   <PropertyGroup Label="Package information">
     <Description>Fast ZIP file reading and streaming library</Description>
-    <VersionPrefix>1.0.2</VersionPrefix>
+    <VersionPrefix>1.0.3</VersionPrefix>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <Authors>FastZip Contributors</Authors>
     <PackageTags>FastZip;zip;streaming</PackageTags>
