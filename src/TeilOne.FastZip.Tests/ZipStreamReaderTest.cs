@@ -28,14 +28,14 @@ namespace TeilOne.FastZip.Tests
         [TestMethod]
         public async Task ZipStreamReader_Deflate_ReturnsCorrectContent()
         {
-            await TestZipContent(CreateTestZip("zip-deflate.zip", CompressionLevel.Fastest, 16384));
+            await TestZipContent(TestHelper.CreateTestZip("zip-deflate.zip", CompressionLevel.Fastest, 16384));
         }
 
         [TestMethod]
         [Timeout(1000)]
         public async Task ZipStreamReader_SlowSource_ReturnsCorrectContent()
         {
-            var filePath = CreateTestZip("zip-deflate.zip", CompressionLevel.Fastest, 16384);
+            var filePath = TestHelper.CreateTestZip("zip-deflate.zip", CompressionLevel.Fastest, 16384);
 
             try
             {
@@ -53,13 +53,13 @@ namespace TeilOne.FastZip.Tests
         [TestMethod]
         public async Task ZipStreamReader_NoCompression_ReturnsCorrectContent()
         {
-            await TestZipContent(CreateTestZip("zip-store.zip", CompressionLevel.NoCompression, 16384));
+            await TestZipContent(TestHelper.CreateTestZip("zip-store.zip", CompressionLevel.NoCompression, 16384));
         }
 
         [TestMethod]
         public async Task ZipStreamReader_BrokenFile_ThrowsFormatException()
         {
-            var filePath = CreateTestZip("broken-file.zip", CompressionLevel.NoCompression, 16384);
+            var filePath = TestHelper.CreateTestZip("broken-file.zip", CompressionLevel.NoCompression, 16384);
             var data = File.ReadAllBytes(filePath);
             File.WriteAllBytes(filePath, data.AsSpan(0, data.Length / 2).ToArray());
 
@@ -77,46 +77,13 @@ namespace TeilOne.FastZip.Tests
         [TestMethod]
         public async Task ZipStreamReader_Zip64Deflate_ReturnsCorrectContent()
         {
-            await TestZipContent(CreateTestZip("zip64-deflate.zip", CompressionLevel.Fastest, UInt32.MaxValue));
+            await TestZipContent(TestHelper.CreateTestZip("zip64-deflate.zip", CompressionLevel.Fastest, UInt32.MaxValue));
         }
 
         [TestMethod]
         public async Task ZipStreamReader_Zip64Store_ReturnsCorrectContent()
         {
-            await TestZipContent(CreateTestZip("zip64-store.zip", CompressionLevel.NoCompression, UInt32.MaxValue));
-        }
-
-        private static string CreateTestZip(string fileName, CompressionLevel compressionLevel, long maxEntrySize)
-        {
-            const string text = " The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.";
-
-            using var fs = new FileStream(fileName, FileMode.Create);
-            using var archive = new ZipArchive(fs, ZipArchiveMode.Create);
-
-            var entrySize = maxEntrySize;
-            var i = 1;
-
-            while (entrySize > 2048)
-            {
-                var newEntry = archive.CreateEntry($"file{i}.txt", compressionLevel);
-                using var entryStream = newEntry.Open();
-
-                using var wr = new StreamWriter(entryStream, Encoding.UTF8, 8192);
-
-                long written = 0;
-
-                while (written <= entrySize)
-                {
-                    wr.Write(text);
-
-                    written += text.Length;
-                }
-
-                entrySize /= 2;
-                i++;
-            }
-
-            return fileName;
+            await TestZipContent(TestHelper.CreateTestZip("zip64-store.zip", CompressionLevel.NoCompression, UInt32.MaxValue));
         }
 
         private async Task TestZipContent(string filePath, bool keepFile = false)
