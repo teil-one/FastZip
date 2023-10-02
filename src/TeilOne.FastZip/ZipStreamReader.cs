@@ -6,7 +6,7 @@ namespace TeilOne.FastZip
 {
     public class ZipStreamReader : BaseStreamReader
     {
-        public ZipStreamReader(Stream stream, int bufferSize = 1024 * 32)
+        public ZipStreamReader(Stream stream, int bufferSize = 1024 * 512)
             : base(stream, LocalFileHeaderSignature.Length, bufferSize)
         {
         }

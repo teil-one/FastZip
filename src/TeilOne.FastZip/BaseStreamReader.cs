@@ -2,7 +2,7 @@
 {
     public class BaseStreamReader : IDisposable, IAsyncDisposable
     {
-        private const int MaxEntryDataLengthInRam = 1024 * 1024 * 32; // 32 MB
+        private const int MaxEntryDataLengthInRam = 1024 * 512; // 512 KB
 
         private readonly byte[] _buffer;
         private readonly int _maxSearchLength;
@@ -11,7 +11,7 @@
         private bool _disposed;
         private int _validBufferLength;
 
-        public BaseStreamReader(Stream stream, int searchablePatternLength, int bufferSize = 1024 * 32)
+        public BaseStreamReader(Stream stream, int searchablePatternLength, int bufferSize)
         {
             if (searchablePatternLength < 0)
             {
@@ -161,17 +161,12 @@
             {
                 bytesRead = 0;
 
-                var foundItems = searchItems
-                    .Select(search => _buffer.AsSpan(_bufferPosition, _validBufferLength - _bufferPosition).IndexOf(search))
-                    .Where(x => x >= 0)
-                    .ToList();
+                var end = FindInBuffer(searchItems);
 
-                var endFound = foundItems.Any();
+                var endFound = end >= 0;
 
                 if (endFound)
                 {
-                    var end = foundItems.Min();
-
                     var endData = await ReadNextAsync(end);
                     await result.WriteAsync(endData);
 
@@ -202,6 +197,24 @@
             return null;
         }
 
+        private int FindInBuffer(byte[][] searchItems)
+        {
+            var found = int.MaxValue;
+
+            var span = _buffer.AsSpan(_bufferPosition, _validBufferLength - _bufferPosition);
+
+            foreach (var search in searchItems)
+            {
+                var searchResult = span.IndexOf(search);
+                if (searchResult >= 0 && searchResult < found)
+                {
+                    found = searchResult;
+                }
+            }
+
+            return found == int.MaxValue ? -1 : found;
+        }
+
         private async Task<FileStream> MoveStreamToFile(Stream sourceStream)
         {
             var file = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -216,7 +229,7 @@
             sourceStream.Seek(0, SeekOrigin.Begin);
             await sourceStream.CopyToAsync(fileStream);
 
-            sourceStream.Dispose();
+            await sourceStream.DisposeAsync();
 
             return fileStream;
         }
